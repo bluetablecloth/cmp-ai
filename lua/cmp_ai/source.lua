@@ -60,7 +60,6 @@ end
 local function debounce_trailing(fn, ms)
 	local timer = uv.new_timer()
 	local wrapped_fn
-
     function wrapped_fn(...)
       local argv = {...}
       local argc = select('#', ...)

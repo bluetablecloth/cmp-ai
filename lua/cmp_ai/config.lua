@@ -3,8 +3,9 @@ local M = {}
 local conf = {
   max_lines = 50,
   run_on_every_keystroke = true,
-  provider = 'HF',
+  provider = 'Ollama',
   provider_options = {},
+  debounce_delay = 2000,
   notify = true,
   notify_callback = function(msg)
     vim.notify(msg)
