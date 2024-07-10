@@ -52,6 +52,7 @@ end
 
 function Source:trigger(ctx, callback)
   if vim.fn.mode() == 'i' then
+    print("sent to ollama...")
     self:_do_complete(ctx, callback)
   end
 end
