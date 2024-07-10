@@ -46,13 +46,63 @@ function Source:_do_complete(ctx, cb)
   end)
 end
 
+function Source:trigger(ctx, callback)
+  if vim.fn.mode() == 'i' then
+    self:_do_complete(ctx, callback)
+  end
+end
+
+-- based on https://github.com/runiq/neovim-throttle-debounce/blob/main/lua/throttle-debounce/init.lua (MIT)
+local function debounce_trailing(fn, ms)
+	local timer = vim.loop.new_timer()
+	local wrapped_fn
+
+    function wrapped_fn(...)
+      local argv = {...}
+      local argc = select('#', ...)
+      -- timer:stop() -- seems not needed?
+      timer:start(ms, 0, function()
+        pcall(vim.schedule_wrap(fn), unpack(argv, 1, argc))
+      end)
+    end
+	return wrapped_fn, timer
+end
+
+local bounce_complete, ret_tim =  debounce_trailing(
+  Source.trigger,
+  conf:get('debounce_delay')
+)
+
+local self_cp, ctx_cp, call_cp -- variables to store last completion context
+
+local bounce_autogroup = vim.api.nvim_create_augroup("BounceCompletion", { clear = true })
+vim.api.nvim_create_autocmd({"TextChangedI","InsertEnter","TextChangedP"},{
+  pattern = "*",
+  callback = function()
+    if self_cp ~= nil then
+      bounce_complete(self_cp, ctx_cp, call_cp)
+    end
+  end,
+  group = bounce_autogroup
+})
+
+vim.api.nvim_create_autocmd({"InsertLeave"},{
+  pattern = "*",
+  callback = function()
+    ret_tim:stop()
+  end,
+ group = bounce_autogroup
+})
+
+
 --- complete
 function Source:complete(ctx, callback)
   if conf:get('ignored_file_types')[vim.bo.filetype] then
     callback()
     return
   end
-  self:_do_complete(ctx, callback)
+  self_cp, ctx_cp, call_cp = self, ctx, callback
+  bounce_complete(self_cp, ctx, callback)
 end
 
 function Source:end_complete(data, ctx, cb)
