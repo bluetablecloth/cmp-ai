@@ -54,7 +54,7 @@ end
 
 -- based on https://github.com/runiq/neovim-throttle-debounce/blob/main/lua/throttle-debounce/init.lua (MIT)
 local function debounce_trailing(fn, ms)
-	local timer = vim.loop.new_timer()
+	local timer = vim.uv.new_timer()
 	local wrapped_fn
 
     function wrapped_fn(...)
