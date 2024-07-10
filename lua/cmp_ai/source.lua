@@ -1,5 +1,9 @@
 local cmp = require('cmp')
 local api = vim.api
+local uv = vim.uv
+if uv == nil then
+    uv = vim.loop
+end
 local conf = require('cmp_ai.config')
 
 local Source = {}
@@ -23,11 +27,11 @@ function Source:_do_complete(ctx, cb)
   local cur_line = ctx.context.cursor_line
   -- properly handle utf8
   -- local cur_line_before = string.sub(cur_line, 1, cursor.col - 1)
-  local cur_line_before = vim.fn.strpart(cur_line, 0, math.max(cursor.col - 1, 0), true)
+  local cur_line_before = vim.fn.strpart(cur_line, 0, math.max(cursor.col - 1, 0), 1)
 
   -- properly handle utf8
   -- local cur_line_after = string.sub(cur_line, cursor.col) -- include current character
-  local cur_line_after = vim.fn.strpart(cur_line, math.max(cursor.col - 1, 0), vim.fn.strdisplaywidth(cur_line), true) -- include current character
+  local cur_line_after = vim.fn.strpart(cur_line, math.max(cursor.col - 1, 0), vim.fn.strdisplaywidth(cur_line), 1) -- include current character
 
   local lines_before = api.nvim_buf_get_lines(0, math.max(0, cursor.line - max_lines), cursor.line, false)
   table.insert(lines_before, cur_line_before)
@@ -54,13 +58,13 @@ end
 
 -- based on https://github.com/runiq/neovim-throttle-debounce/blob/main/lua/throttle-debounce/init.lua (MIT)
 local function debounce_trailing(fn, ms)
-	local timer = vim.uv.new_timer()
+	local timer = uv.new_timer()
 	local wrapped_fn
 
     function wrapped_fn(...)
       local argv = {...}
       local argc = select('#', ...)
-      -- timer:stop() -- seems not needed?
+      timer:stop()
       timer:start(ms, 0, function()
         pcall(vim.schedule_wrap(fn), unpack(argv, 1, argc))
       end)
